@@ -20,26 +20,42 @@ async function run() {
         await client.connect();
         const database = client.db("delivery");
         const servicesCollection = database.collection("services");
+        const ordersCollection = database.collection("orders");
 
         // GET API
-        // Load all data in server site
+        // Load all data in server site from services collection
         app.get('/services', async (req, res) => {
             const cursor = servicesCollection.find({});
             const services = await cursor.toArray();
             res.send(services);
         });
 
-        // GET single service
-        // app.get('/services/:id',async(req,res)=>{
-        //   const id=req.params.id;
-        //   console.log('Getting specific id: ',id);
-        //   const query={_id: ObjectId(id)};
-        //   const service= await servicesCollection.findOne(query);
-        //   res.json(service);
-        // });
+        // Load all data in server site from order collection
+        app.get('/orders', async (req, res) => {
+            const cursor = ordersCollection.find({});
+            const orders = await cursor.toArray();
+            res.send(orders);
+        });
+
+        // Update API
+        app.put('/orders/:id', async (req, res) => {
+            const id = req.params.id;
+            // const updatedProduct = req.body;
+            const filter = { _id: ObjectId(id) };
+            const options = { upsert: true };
+            const updateDoc = {
+                $set: {
+                    status: "approved"
+                },
+            };
+            const result = await ordersCollection.updateOne(filter, updateDoc, options);
+            console.log("updating Products ", id);
+            res.json(result);
+        })
 
         //POST API
-        app.post('/services', async (req, res) => {
+        // Add data to service collection
+        app.post('/addService', async (req, res) => {
             const service = req.body;
             // console.log('Hit the post API with data',service);
             const result = await servicesCollection.insertOne(service);
@@ -47,11 +63,30 @@ async function run() {
             res.json(result);
         });
 
+        // Add data to orders collection
+        app.post('/addOrder', async (req, res) => {
+            const order = req.body;
+            // console.log('Hit the post API with data',service);
+            const result = await ordersCollection.insertOne(order);
+            console.log(result);
+            res.json(result);
+        });
+
+        // use POST to get data by email
+        // app.post('/myOrder', async (req, res) => {
+        //     const keys = req.body;
+        //     console.log(keys);
+        //     res.send('value');
+        //     const query = { email: { $in: keys } };
+        //     const result = await ordersCollection.find(query).toArray();
+        //     res.json(result);
+        // });
+
         // DELETE API
-        app.delete('/services/:id', async (req, res) => {
+        app.delete('/orders/:id', async (req, res) => {
             const id = req.params.id;
             const query = { _id: ObjectId(id) };
-            const result = await servicesCollection.deleteOne(query);
+            const result = await ordersCollection.deleteOne(query);
             res.json(result);
         });
 
